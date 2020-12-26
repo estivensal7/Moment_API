@@ -32,7 +32,7 @@ module.exports = {
 		async createPost(_, { body }, context) {
 			const user = checkAuth(context);
 
-			if (args.body.trim() === "") {
+			if (body.trim() === "") {
 				throw new Error("Post body must not be empty.");
 			}
 
@@ -44,10 +44,6 @@ module.exports = {
 			});
 
 			const post = await newPost.save();
-
-			context.pubsub.publish("NEW POST", {
-				newPost: post,
-			});
 
 			return post;
 		},
@@ -94,12 +90,6 @@ module.exports = {
 			} else {
 				throw new UserInputError("Post not found.");
 			}
-		},
-	},
-
-	Subscription: {
-		newPost: {
-			subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("NEW POST"),
 		},
 	},
 };

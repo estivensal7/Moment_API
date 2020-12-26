@@ -7,6 +7,7 @@ const {
 	validateRegisterInput,
 	validateLoginInput,
 } = require("../../util/inputValidators");
+const checkAuth = require("../../util/checkAuth");
 
 const generateToken = (user) => {
 	return jwt.sign(
@@ -99,6 +100,52 @@ module.exports = {
 				id: res._id,
 				token,
 			};
+		},
+
+		async followUser(_, { currentUserId, userToFollowId }, context) {
+			const { username } = checkAuth(context);
+			const currentUser = await User.findById(currentUserId);
+			const userToFollow = await User.findById(userToFollowId);
+
+			if (currentUser && userToFollow) {
+				// Check if curentUser is already following the userToFollow
+				if (
+					userToFollow.followers.find(
+						(follower) => follower.username === username
+					)
+				) {
+					// User already follows this person, unfollow them (remove the current user's username from the userToFollow's followers list)
+					userToFollow.followers = userToFollow.followers.filter(
+						(follower) => follower.username !== username
+					);
+
+					// remove the 'userToFollow' from the currentUser's following list
+					currentUser.followings = currentUser.followings.filter(
+						(followingUser) =>
+							followingUser.username !== userToFollow.username
+					);
+				} else {
+					// userToFollow is not yet followed by the currentUser, follow the userToFollow
+					currentUser.followings.push({
+						username: userToFollow.username,
+						createdAt: new Date().toISOString(),
+					});
+
+					// Add the currentUser's username to the userToFollow's followers list
+					userToFollow.followers.push({
+						username: currentUser.username,
+						createdAt: new Date().toISOString(),
+					});
+				}
+
+				await currentUser.save();
+				await userToFollow.save();
+				return currentUser;
+			} else if (!userToFollow) {
+				throw new UserInputError("User to follow not found.");
+			} else {
+				throw new UserInputError("Authentication error.");
+			}
 		},
 	},
 };
