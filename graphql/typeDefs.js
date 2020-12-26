@@ -57,6 +57,7 @@ module.exports = gql`
 	type Query {
 		getPosts: [Post]
 		getPost(postId: ID!): Post
+		getTimeline: [Post]
 	}
 
 	type Mutation {

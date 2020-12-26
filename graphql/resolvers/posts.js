@@ -1,5 +1,5 @@
 const { AuthenticationError } = require("apollo-server");
-const { Post } = require("../../models");
+const { Post, User } = require("../../models");
 const checkAuth = require("../../util/checkAuth");
 
 module.exports = {
@@ -25,6 +25,31 @@ module.exports = {
 			} catch (err) {
 				throw new Error(err);
 			}
+		},
+
+		async getTimeline(_, __, context) {
+			const { username } = checkAuth(context);
+			let followingsUsernameArray = [];
+			let timelinePosts = [];
+
+			// Grabbing the user info from our DB
+			const user = await User.findOne({ username });
+
+			// Pushing all followings usernames into an array in preparation for the Mongoose $in Operator
+			user.followings.forEach((following) =>
+				followingsUsernameArray.push(following.username)
+			);
+
+			timelinePosts = await Post.find({
+				username: { $in: followingsUsernameArray },
+				createdAt: {
+					$gt: new Date(
+						Date.now() - 24 * 60 * 60 * 1000
+					).toISOString(),
+				},
+			}).sort({ createdAt: -1 });
+
+			return timelinePosts;
 		},
 	},
 
