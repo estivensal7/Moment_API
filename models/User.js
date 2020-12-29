@@ -17,6 +17,7 @@ const userSchema = new Schema({
 			createdAt: String,
 		},
 	],
+	privacyStatus: String,
 });
 
 module.exports = model("User", userSchema);

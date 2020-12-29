@@ -8,6 +8,7 @@ const {
 	validateLoginInput,
 } = require("../../util/inputValidators");
 const checkAuth = require("../../util/checkAuth");
+const checkPrivacy = require("../../util/checkPrivacy");
 
 const generateToken = (user) => {
 	return jwt.sign(
@@ -22,6 +23,58 @@ const generateToken = (user) => {
 };
 
 module.exports = {
+	Query: {
+		async getCurrentUserDetails(_, __, context) {
+			const { username } = checkAuth(context);
+			const user = await User.findOne({ username });
+
+			if (!user) {
+				throw new Error("User not found.");
+			}
+
+			return user;
+		},
+
+		async getUserDetailsByUsername(_, { username }, context) {
+			const currentUser = checkAuth(context);
+			const requestedUser = await User.findOne({ username });
+
+			if (checkPrivacy(currentUser, requestedUser)) {
+				if (!requestedUser) {
+					throw new Error("User not found.");
+				}
+
+				return requestedUser;
+			} else {
+				throw new Error(
+					"This user's profile is private. Follow them to see their profile."
+				);
+			}
+		},
+
+		async getFollowings(_, __, context) {
+			const { username } = checkAuth(context);
+			const user = await User.findOne({ username });
+
+			if (!user) {
+				throw new Error("User not found.");
+			}
+
+			return user.followings;
+		},
+
+		async getFollowers(_, __, context) {
+			const { username } = checkAuth(context);
+			const user = await User.findOne({ username });
+
+			if (!user) {
+				throw new Error("User not found.");
+			}
+
+			return user.followers;
+		},
+	},
+
 	Mutation: {
 		async login(_, { username, password }, context, info) {
 			const { errors, valid } = validateLoginInput(username, password);
@@ -54,7 +107,15 @@ module.exports = {
 
 		async register(
 			_,
-			{ registerInput: { username, email, password, confirmPassword } },
+			{
+				registerInput: {
+					username,
+					email,
+					password,
+					confirmPassword,
+					privacyStatus,
+				},
+			},
 			context,
 			info
 		) {
@@ -88,6 +149,7 @@ module.exports = {
 				email,
 				username,
 				password,
+				privacyStatus,
 				createdAt: new Date().toISOString(),
 			});
 
@@ -102,10 +164,13 @@ module.exports = {
 			};
 		},
 
-		async followUser(_, { currentUserId, userToFollowId }, context) {
+		async followUser(_, { userToFollowId }, context) {
 			const { username } = checkAuth(context);
-			const currentUser = await User.findById(currentUserId);
+			const currentUser = await User.findOne({ username });
 			const userToFollow = await User.findById(userToFollowId);
+
+			console.log(currentUser);
+			console.log(userToFollow);
 
 			if (currentUser && userToFollow) {
 				// Check if curentUser is already following the userToFollow
@@ -146,6 +211,24 @@ module.exports = {
 			} else {
 				throw new UserInputError("Authentication error.");
 			}
+		},
+
+		async changePrivacyStatus(_, __, context) {
+			const { username } = checkAuth(context);
+			const user = await User.findOne({ username });
+
+			console.log(user);
+
+			if (!user) {
+				throw new Error("User not found.");
+			}
+
+			user.privacyStatus === "private"
+				? (user.privacyStatus = "public")
+				: (user.privacyStatus = "private");
+
+			await user.save();
+			return user;
 		},
 	},
 };

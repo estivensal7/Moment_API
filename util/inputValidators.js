@@ -2,7 +2,8 @@ module.exports.validateRegisterInput = (
 	username,
 	email,
 	password,
-	confirmPassword
+	confirmPassword,
+	privacyStatus
 ) => {
 	const errors = {};
 
@@ -24,6 +25,10 @@ module.exports.validateRegisterInput = (
 		errors.password = "Password must not be empty.";
 	} else if (password !== confirmPassword) {
 		errors.confirmPassword = "Passwords must match";
+	}
+
+	if (privacyStatus === "") {
+		errors.password = "Privacy Status must be selected.";
 	}
 
 	return {

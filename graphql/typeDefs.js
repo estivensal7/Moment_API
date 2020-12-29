@@ -52,12 +52,18 @@ module.exports = gql`
 		password: String!
 		confirmPassword: String!
 		email: String!
+		privacyStatus: String!
 	}
 
 	type Query {
-		getPosts: [Post]
+		getPostsByUser(username: String!): [Post]
+		getAllPosts: [Post]
 		getPost(postId: ID!): Post
 		getTimeline: [Post]
+		getCurrentUserDetails: User!
+		getUserDetailsByUsername(username: String!): User
+		getFollowings: [Following]
+		getFollowers: [Follower]
 	}
 
 	type Mutation {
@@ -68,6 +74,7 @@ module.exports = gql`
 		createComment(postId: ID!, body: String!): Post!
 		deleteComment(postId: ID!, commentId: ID!): Post!
 		likePost(postId: ID!): Post!
-		followUser(currentUserId: ID!, userToFollowId: ID!): User!
+		followUser(userToFollowId: ID!): User!
+		changePrivacyStatus: User!
 	}
 `;

@@ -4,9 +4,22 @@ const checkAuth = require("../../util/checkAuth");
 
 module.exports = {
 	Query: {
-		async getPosts() {
+		async getPostsByUser(_, { username }) {
 			try {
-				const posts = await Post.find().sort({ createdAt: -1 });
+				const posts = await Post.find({ username }).sort({
+					createdAt: -1,
+				});
+				return posts;
+			} catch (err) {
+				throw new Error(err);
+			}
+		},
+
+		async getAllPosts() {
+			try {
+				const posts = await Post.find().sort({
+					createdAt: -1,
+				});
 				return posts;
 			} catch (err) {
 				throw new Error(err);
